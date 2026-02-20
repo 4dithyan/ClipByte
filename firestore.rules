@@ -29,8 +29,8 @@ service cloud.firestore {
           // timestamp & expiresAt must be integers
           && request.resource.data.timestamp is int
           && request.resource.data.expiresAt is int
-          // expiresAt must be at most 1 hour from now (in ms)
-          && request.resource.data.expiresAt <= (request.time.toMillis() + 3600001)
+          // expiresAt must be at most 1 hour from now (plus a 5-minute buffer for clock drift)
+          && request.resource.data.expiresAt <= (request.time.toMillis() + 3900000)
           // device label
           && request.resource.data.device is string
           && request.resource.data.device.size() <= 32;
