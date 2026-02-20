@@ -1,35 +1,35 @@
-# ============================================================
-#  ClipByte — .gitignore
-# ============================================================
+# ClipByte Root GitIgnore
 
-# ── Secrets & credentials (NEVER commit these) ──────────────
-android/app/google-services.json
-web/firebase-config.js
-
-# ── Android build outputs ────────────────────────────────────
-android/.gradle/
-android/build/
-android/app/build/
-android/local.properties
-*.keystore
-*.jks
-
-# ── Kotlin / Java ────────────────────────────────────────────
-*.class
-*.dex
-
-# ── Android Studio ───────────────────────────────────────────
-.idea/
-*.iml
-*.iws
-.DS_Store
-Thumbs.db
-
-# ── Node / Firebase tools ────────────────────────────────────
+# Node.js
 node_modules/
+dist/
+build/
+.env
+
+# Firebase
 .firebase/
+firebase-debug.log*
 .firebaserc
 
-# ── OS files ─────────────────────────────────────────────────
+# OS Files
 .DS_Store
-desktop.ini
+Thumbs.db
+*.log
+
+# Project Specific Secrets (Web)
+web/firebase-config.js
+web/cloudinary.js
+
+# Project Specific Secrets (Android)
+android/local.properties
+android/app/google-services.json
+android/app/src/main/java/com/clipbyte/app/util/CloudinaryHelper.kt
+android/.gradle/
+android/app/build/
+android/build/
+android/captures/
+android/*.iml
+android/.idea/
+android/.externalNativeBuild/
+android/.cxx/
+android/local.properties

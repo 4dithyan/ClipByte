@@ -9,12 +9,14 @@
     android:background="@color/bg_primary">
 
     <!-- Logo -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="⚡"
-        android:textSize="48sp"
-        android:layout_marginBottom="8dp"/>
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/iv_logo"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginBottom="16dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/app_logo"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.ClipByte.MediumComponent"/>
 
     <TextView
         android:layout_width="wrap_content"
@@ -45,28 +47,6 @@
         android:layout_marginBottom="12dp"
         android:visibility="gone"/>
 
-    <!-- Tabs -->
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tab_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        app:tabBackground="@color/surface"
-        app:tabTextColor="@color/text_muted"
-        app:tabSelectedTextColor="@color/accent"
-        app:tabIndicatorColor="@color/accent"
-        app:tabRippleColor="@color/accent_dim">
-
-        <com.google.android.material.tabs.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/sign_in"/>
-
-        <com.google.android.material.tabs.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/register"/>
-    </com.google.android.material.tabs.TabLayout>
 
     <!-- Login fields -->
     <LinearLayout
@@ -113,50 +93,6 @@
             android:backgroundTint="@color/accent"/>
     </LinearLayout>
 
-    <!-- Register fields -->
-    <LinearLayout
-        android:id="@+id/layout_register"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:visibility="gone">
-
-        <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/email"
-            android:layout_marginBottom="12dp">
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/et_reg_email"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textEmailAddress"
-                android:imeOptions="actionNext"/>
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-            app:endIconMode="password_toggle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/password"
-            android:layout_marginBottom="16dp">
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/et_reg_password"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textPassword"
-                android:imeOptions="actionDone"/>
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_register"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/create_account"
-            android:backgroundTint="@color/accent"/>
-    </LinearLayout>
 
     <!-- Progress -->
     <ProgressBar

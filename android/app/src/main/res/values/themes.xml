@@ -13,4 +13,13 @@
         <item name="android:navigationBarColor">@color/bg_primary</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
+
+    <!-- Logo Shape Appearances -->
+    <style name="ShapeAppearance.ClipByte.SmallComponent" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerSize">20%</item>
+    </style>
+
+    <style name="ShapeAppearance.ClipByte.MediumComponent" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerSize">16dp</item>
+    </style>
 </resources>

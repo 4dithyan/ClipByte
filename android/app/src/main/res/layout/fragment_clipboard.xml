@@ -87,6 +87,21 @@
         android:layout_weight="1"
         android:clipToPadding="false"/>
 
+    <!-- Watermark -->
+    <TextView
+        android:id="@+id/tv_watermark"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp"
+        android:text="Made with ❤️ by Adithyan\nhttps://www.linkedin.com/in/adithyan-me/"
+        android:textColor="#818CF8"
+        android:textSize="11sp"
+        android:gravity="center"
+        android:fontFamily="sans-serif-medium"
+        android:autoLink="web"
+        android:linksClickable="true"/>
+
     <!-- Progress -->
     <ProgressBar
         android:id="@+id/progress_bar"

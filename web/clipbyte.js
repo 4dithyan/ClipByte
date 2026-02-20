@@ -1,8 +1,8 @@
-// ============================================================
-//  app.js  —  ClipByte Web Application
-//  Handles: Auth, Firestore realtime sync, text/image clipboard,
-//           drag-drop, history, dark-mode, auto-delete TTL
-// ============================================================
+// ── Port Check (CRITICAL) ─────────────────────────────────────
+if (window.location.port === "5500") {
+    alert("CRITICAL: You are on port 5500 (Live Server).\n\nPlease use http://localhost:3000 to avoid caching and UI bugs!");
+    window.location.href = "http://localhost:3000";
+}
 
 import { auth, db } from "./firebase-config.js";
 import { uploadToCloudinary } from "./cloudinary.js";
@@ -22,6 +22,7 @@ import {
     onSnapshot,
     deleteDoc,
     doc,
+    getDocs,
     serverTimestamp,
     Timestamp,
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
@@ -29,17 +30,10 @@ import {
 // ── DOM refs ──────────────────────────────────────────────────
 const authSection = document.getElementById("auth-section");
 const appSection = document.getElementById("app-section");
-const loginForm = document.getElementById("login-form");
-const registerForm = document.getElementById("register-form");
-const tabLogin = document.getElementById("tab-login");
-const tabRegister = document.getElementById("tab-register");
+const logoutBtn = document.getElementById("logout-btn");
 const loginEmail = document.getElementById("login-email");
 const loginPassword = document.getElementById("login-password");
 const loginBtn = document.getElementById("login-btn");
-const regEmail = document.getElementById("reg-email");
-const regPassword = document.getElementById("reg-password");
-const regBtn = document.getElementById("reg-btn");
-const logoutBtn = document.getElementById("logout-btn");
 const userEmail = document.getElementById("user-email");
 const textInput = document.getElementById("text-input");
 const syncTextBtn = document.getElementById("sync-text-btn");
@@ -49,52 +43,20 @@ const uploadProgress = document.getElementById("upload-progress");
 const progressBar = document.getElementById("progress-bar");
 const historyList = document.getElementById("history-list");
 const emptyState = document.getElementById("empty-state");
-const themeToggle = document.getElementById("theme-toggle");
 const toastEl = document.getElementById("toast");
 const authError = document.getElementById("auth-error");
 
-// ── State ─────────────────────────────────────────────────────
+
 let currentUser = null;
-let unsubscribeSnap = null;       // Firestore listener teardown
+let unsubscribeSnap = null;
 const ONE_HOUR_MS = 60 * 60 * 1000;
 const HISTORY_LIMIT = 10;
 const DEVICE_LABEL = "Web";
 
-// ── Theme ─────────────────────────────────────────────────────
-const savedTheme = localStorage.getItem("clipbyte-theme") || "dark";
-document.documentElement.setAttribute("data-theme", savedTheme);
-updateThemeIcon(savedTheme);
 
-themeToggle.addEventListener("click", () => {
-    const current = document.documentElement.getAttribute("data-theme");
-    const next = current === "dark" ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", next);
-    localStorage.setItem("clipbyte-theme", next);
-    updateThemeIcon(next);
-});
-
-function updateThemeIcon(theme) {
-    themeToggle.textContent = theme === "dark" ? "☀️" : "🌙";
-}
 
 // ── Auth tabs ─────────────────────────────────────────────────
-tabLogin.addEventListener("click", () => switchTab("login"));
-tabRegister.addEventListener("click", () => switchTab("register"));
-
-function switchTab(tab) {
-    if (tab === "login") {
-        loginForm.classList.add("active");
-        registerForm.classList.remove("active");
-        tabLogin.classList.add("active");
-        tabRegister.classList.remove("active");
-    } else {
-        registerForm.classList.add("active");
-        loginForm.classList.remove("active");
-        tabRegister.classList.add("active");
-        tabLogin.classList.remove("active");
-    }
-    clearAuthError();
-}
+// Registration tab and logic removed. Only login remains.
 
 // ── Firebase Auth ─────────────────────────────────────────────
 loginBtn.addEventListener("click", async () => {
@@ -113,23 +75,6 @@ loginBtn.addEventListener("click", async () => {
     }
 });
 
-regBtn.addEventListener("click", async () => {
-    const email = regEmail.value.trim();
-    const pass = regPassword.value;
-    if (!email || !pass) return showAuthError("Please fill in all fields.");
-    if (pass.length < 6) return showAuthError("Password must be at least 6 characters.");
-    regBtn.disabled = true;
-    regBtn.textContent = "Creating account…";
-    try {
-        await createUserWithEmailAndPassword(auth, email, pass);
-    } catch (e) {
-        showAuthError(friendlyAuthError(e.code));
-    } finally {
-        regBtn.disabled = false;
-        regBtn.textContent = "Create Account";
-    }
-});
-
 logoutBtn.addEventListener("click", async () => {
     if (unsubscribeSnap) unsubscribeSnap();
     await signOut(auth);
@@ -140,18 +85,19 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         authSection.classList.add("hidden");
         appSection.classList.remove("hidden");
+        logoutBtn.classList.remove("hidden");
         userEmail.textContent = user.email;
         startRealtimeSync(user.uid);
         deleteExpiredClips(user.uid);
     } else {
         authSection.classList.remove("hidden");
         appSection.classList.add("hidden");
+        logoutBtn.classList.add("hidden");
         historyList.innerHTML = "";
         if (unsubscribeSnap) unsubscribeSnap();
     }
 });
 
-// ── Text Sync ─────────────────────────────────────────────────
 syncTextBtn.addEventListener("click", async () => {
     const text = textInput.value.trim();
     if (!text || !currentUser) return;
@@ -253,26 +199,37 @@ function startRealtimeSync(uid) {
     );
 
     unsubscribeSnap = onSnapshot(q, (snapshot) => {
-        renderHistory(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+        renderHistory(snapshot.docs.map((d) => ({ ...d.data(), id: d.id })));
     });
 }
 
 async function deleteExpiredClips(uid) {
-    // Soft cleanup on page load: delete docs where expiresAt < now
-    // A Cloud Function handles server-side cleanup if configured
-    const clipsRef = collection(db, "users", uid, "clipboard");
-    const q = query(
-        clipsRef,
-        where("expiresAt", "<", Date.now()),
-        limit(50)
-    );
-    const snap = await import(
-        "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js"
-    ).then(({ getDocs }) => getDocs(q));
-    snap.forEach((d) => deleteDoc(doc(db, "users", uid, "clipboard", d.id)));
+    console.log(`[ClipByte] Checking for expired clips manually for user: ${uid}...`);
+    try {
+        const clipsRef = collection(db, "users", uid, "clipboard");
+        const q = query(
+            clipsRef,
+            where("expiresAt", "<", Date.now())
+        );
+        const snap = await getDocs(q);
+        if (snap.empty) {
+            console.log("[ClipByte] No expired clips found.");
+            return;
+        }
+
+        console.log(`[ClipByte] Found ${snap.size} expired clips. Deleting...`);
+        const batchPromises = snap.docs.map((d) => {
+            console.log(` - Deleting clip ${d.id} (expired at ${new Date(d.data().expiresAt).toLocaleString()})`);
+            return deleteDoc(doc(db, "users", uid, "clipboard", d.id));
+        });
+        await Promise.all(batchPromises);
+        console.log("[ClipByte] Cleanup complete.");
+    } catch (err) {
+        console.error("[ClipByte] Manual cleanup failed:", err);
+    }
 }
 
-// ── Render History ────────────────────────────────────────────
+// ── Render History (v2.1 Bulletproof) ────────────────────────
 function renderHistory(clips) {
     historyList.innerHTML = "";
     const valid = clips.filter((c) => c.expiresAt > Date.now());
@@ -281,84 +238,123 @@ function renderHistory(clips) {
         emptyState.classList.remove("hidden");
         return;
     }
+    console.log(`[ClipByte] Rendering ${valid.length} valid clips...`);
     emptyState.classList.add("hidden");
 
+    let finalHtml = "";
+
     valid.forEach((clip) => {
-        const card = document.createElement("div");
-        card.className = `clip-card clip-${clip.type}`;
-        card.dataset.id = clip.id;
+        const type = String(clip.type || "").toLowerCase();
+        const timeStr = timeAgo(clip.timestamp);
+        const ttlLabel = msToCountdown(clip.expiresAt - Date.now());
 
-        const meta = document.createElement("div");
-        meta.className = "clip-meta";
-        meta.innerHTML = `
-      <span class="clip-device">${clip.device || "Unknown"}</span>
-      <span class="clip-time">${timeAgo(clip.timestamp)}</span>
-      <span class="clip-ttl" data-expires="${clip.expiresAt}">⏱ expires in ${msToCountdown(clip.expiresAt - Date.now())}</span>
-    `;
+        const isText = type === "text";
+        const contentHtml = isText
+            ? `<p class="clip-text">${escapeHtml(clip.content)}</p>`
+            : `<img src="${escapeHtml(clip.imageUrl)}" alt="Clipboard image" class="clip-image" loading="lazy">`;
 
-        const body = document.createElement("div");
-        body.className = "clip-body";
-
-        if (clip.type === "text") {
-            body.innerHTML = `<p class="clip-text">${escapeHtml(clip.content)}</p>`;
-            const actions = createActions([
-                { label: "📋 Copy", handler: () => copyText(clip.content) },
-                { label: "🗑 Delete", handler: () => deleteClip(clip.id), cls: "btn-danger" },
-            ]);
-            card.append(meta, body, actions);
+        // Build action buttons as strings for absolute reliability
+        let actionButtonsHtml = "";
+        if (isText) {
+            actionButtonsHtml = `
+              <button class="btn btn-sm btn-action" style="cursor: pointer !important; pointer-events: auto !important; z-index: 10;" onclick="window.copyText(\`${clip.content.replace(/`/g, '\\`').replace(/\\/g, '\\\\')}\`)">📋 Copy</button>
+              <button class="btn btn-sm btn-danger btn-action" style="cursor: pointer !important; pointer-events: auto !important; z-index: 10;" onclick="if(confirm('Delete this clip?')){ window.deleteClip('${clip.id}') }">🗑 Delete</button>
+            `;
         } else {
-            body.innerHTML = `<img src="${escapeHtml(clip.imageUrl)}" alt="Clipboard image" class="clip-image" loading="lazy">`;
-            const actions = createActions([
-                { label: "⬇ Download", handler: () => downloadImage(clip.imageUrl) },
-                { label: "📋 Copy URL", handler: () => copyText(clip.imageUrl) },
-                { label: "🗑 Delete", handler: () => deleteClip(clip.id), cls: "btn-danger" },
-            ]);
-            card.append(meta, body, actions);
+            actionButtonsHtml = `
+              <button class="btn btn-sm btn-action" style="cursor: pointer !important; pointer-events: auto !important; z-index: 10;" onclick="window.downloadImage(\`${clip.imageUrl}\`)">⬇ Download</button>
+              <button class="btn btn-sm btn-action" style="cursor: pointer !important; pointer-events: auto !important; z-index: 10;" onclick="window.copyText(\`${clip.imageUrl}\`)">📋 Copy URL</button>
+              <button class="btn btn-sm btn-danger btn-action" style="cursor: pointer !important; pointer-events: auto !important; z-index: 10;" onclick="if(confirm('Delete this clip?')){ window.deleteClip('${clip.id}') }">🗑 Delete</button>
+            `;
         }
 
-        historyList.appendChild(card);
+        finalHtml += `
+          <li class="clip-card clip-${type}" data-id="${clip.id}">
+            <div class="clip-meta">
+              <span class="clip-device">${clip.device || "Unknown"}</span>
+              <span class="clip-time">${timeStr}</span>
+              <span class="clip-ttl" data-expires="${clip.expiresAt}">⏱ expires in ${ttlLabel}</span>
+            </div>
+            <div class="clip-body">
+              ${contentHtml}
+            </div>
+            <div class="clip-actions" style="display: flex !important; gap: 8px !important; margin-top: auto !important; padding-top: 12px !important; border-top: 1px solid rgba(255,255,255,0.1) !important; min-height: 48px !important;">
+              ${actionButtonsHtml}
+            </div>
+          </li>
+        `;
     });
+
+    historyList.innerHTML = finalHtml;
+
+    historyList.scrollTop = 0;
 }
 
-function createActions(buttons) {
-    const row = document.createElement("div");
-    row.className = "clip-actions";
-    buttons.forEach(({ label, handler, cls = "" }) => {
-        const btn = document.createElement("button");
-        btn.className = `btn btn-sm ${cls}`;
-        btn.textContent = label;
-        btn.addEventListener("click", handler);
-        row.appendChild(btn);
-    });
-    return row;
-}
+console.log("[ClipByte] Core JS Loaded - v2.9 (Single Sign-On)");
 
-async function deleteClip(clipId) {
-    if (!currentUser) return;
-    await deleteDoc(doc(db, "users", currentUser.uid, "clipboard", clipId));
-    showToast("Deleted ✓");
-}
+window.deleteClip = async function (clipId) {
+    if (!currentUser) {
+        alert("Please sign in again.");
+        return;
+    }
+    if (!clipId || typeof clipId !== 'string' || clipId.trim() === "") {
+        console.error("[ClipByte] Invalid clipId:", clipId);
+        alert("Error: Missing Clip ID. Try refreshing the page.");
+        return;
+    }
+    try {
+        console.log(`[ClipByte] Nuclear Delete: ${clipId}`);
+        // Ensure path is exactly users/uid/clipboard/clipId
+        const clipRef = doc(db, "users", currentUser.uid, "clipboard", clipId);
+
+        await deleteDoc(clipRef);
+        console.log("[ClipByte] Delete command sent to Firebase.");
+        showToast("Deleted ✓");
+
+        // Force UI update
+        const el = document.querySelector(`[data-id="${clipId}"]`);
+        if (el) el.remove();
+
+    } catch (err) {
+        console.error("[ClipByte] Delete ERROR:", err);
+        alert("Delete failed! Check your internet or Firebase permissions.\n\nError: " + err.message);
+    }
+};
 
 // ── Clipboard helpers ─────────────────────────────────────────
-async function copyText(text) {
+window.copyText = async function (text) {
     try {
         await navigator.clipboard.writeText(text);
         showToast("Copied to clipboard ✓");
     } catch {
         showToast("Copy failed", true);
     }
-}
+};
 
-async function downloadImage(url) {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `clipbyte_${Date.now()}.jpg`;
-    a.target = "_blank";
-    a.rel = "noopener";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-}
+window.downloadImage = async function (url) {
+    try {
+        showToast("Starting download…");
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = `clipbyte_${Date.now()}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+
+        setTimeout(() => {
+            URL.revokeObjectURL(blobUrl);
+            a.remove();
+        }, 100);
+        showToast("Download started ✓");
+    } catch (err) {
+        console.error("Download failed:", err);
+        showToast("Download failed", true);
+        window.open(url, "_blank");
+    }
+};
 
 // ── UI Utilities ──────────────────────────────────────────────
 function showToast(msg, error = false) {
@@ -413,6 +409,11 @@ function friendlyAuthError(code) {
     };
     return map[code] || "Authentication failed. Please try again.";
 }
+
+// ── Periodic cleanup (runs every 5 minutes) ───────────────────
+setInterval(() => {
+    if (currentUser) deleteExpiredClips(currentUser.uid);
+}, 5 * 60 * 1000);
 
 // ── Countdown ticker (updates TTL display every second) ───────
 setInterval(() => {

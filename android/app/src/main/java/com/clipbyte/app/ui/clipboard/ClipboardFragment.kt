@@ -62,9 +62,11 @@ class ClipboardFragment : Fragment() {
     }
 
     // ── RecyclerView ─────────────────────────────────────────────
+    // ── RecyclerView ─────────────────────────────────────────────
     private val adapter = ClipAdapter(
-        onCopy   = { clip -> copyToSystem(clip) },
-        onDelete = { clip -> viewModel.deleteClip(clip.id) }
+        onCopy     = { clip -> copyToSystem(clip) },
+        onDelete   = { clip -> viewModel.deleteClip(clip.id) },
+        onDownload = { clip -> downloadImage(clip.imageUrl) }
     )
 
     private fun setupRecyclerView() {
@@ -105,7 +107,10 @@ class ClipboardFragment : Fragment() {
                             } else {
                                 binding.rvClips.visibility = View.VISIBLE
                                 binding.tvEmpty.visibility = View.GONE
-                                adapter.submitList(state.items)
+                                // Submit list and auto-scroll to top when items are added/updated
+                                adapter.submitList(state.items) {
+                                    binding.rvClips.scrollToPosition(0)
+                                }
                             }
                         }
                         is ClipsState.Error -> {
@@ -153,6 +158,24 @@ class ClipboardFragment : Fragment() {
         showToast("Copied ✓")
     }
 
+    private fun downloadImage(url: String) {
+        try {
+            val dm = requireContext().getSystemService(android.app.DownloadManager::class.java)
+            val request = android.app.DownloadManager.Request(Uri.parse(url)).apply {
+                setTitle("ClipByte Image")
+                setDescription("Downloading synced image")
+                setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, "clipbyte_${System.currentTimeMillis()}.jpg")
+                setAllowedOverMetered(true)
+                setAllowedOverRoaming(true)
+            }
+            dm.enqueue(request)
+            showToast("Download started ✓")
+        } catch (e: Exception) {
+            showToast("Download failed: ${e.message}")
+        }
+    }
+
     private fun showToast(msg: String) {
         Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
     }
@@ -160,17 +183,19 @@ class ClipboardFragment : Fragment() {
 
 // ── Adapter ───────────────────────────────────────────────────
 private class ClipAdapter(
-    private val onCopy:   (ClipItem) -> Unit,
-    private val onDelete: (ClipItem) -> Unit
+    private val onCopy:     (ClipItem) -> Unit,
+    private val onDelete:   (ClipItem) -> Unit,
+    private val onDownload: (ClipItem) -> Unit
 ) : ListAdapter<ClipItem, ClipAdapter.VH>(DIFF) {
 
     inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val tvDevice:  TextView  = itemView.findViewById(R.id.tv_device)
-        val tvTime:    TextView  = itemView.findViewById(R.id.tv_time)
-        val tvContent: TextView  = itemView.findViewById(R.id.tv_content)
-        val ivImage:   ImageView = itemView.findViewById(R.id.iv_image)
-        val btnCopy:   View      = itemView.findViewById(R.id.btn_copy)
-        val btnDelete: View      = itemView.findViewById(R.id.btn_delete)
+        val tvDevice:    TextView  = itemView.findViewById(R.id.tv_device)
+        val tvTime:      TextView  = itemView.findViewById(R.id.tv_time)
+        val tvContent:   TextView  = itemView.findViewById(R.id.tv_content)
+        val ivImage:     ImageView = itemView.findViewById(R.id.iv_image)
+        val btnCopy:     View      = itemView.findViewById(R.id.btn_copy)
+        val btnDelete:   View      = itemView.findViewById(R.id.btn_delete)
+        val btnDownload: View?     = itemView.findViewById(R.id.btn_download)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -188,8 +213,9 @@ private class ClipAdapter(
         } else {
             holder.ivImage.load(clip.imageUrl) { crossfade(true) }
         }
-        holder.btnCopy.setOnClickListener   { onCopy(clip) }
-        holder.btnDelete.setOnClickListener { onDelete(clip) }
+        holder.btnCopy.setOnClickListener     { onCopy(clip) }
+        holder.btnDelete.setOnClickListener   { onDelete(clip) }
+        holder.btnDownload?.setOnClickListener { onDownload(clip) }
     }
 
     override fun getItemViewType(position: Int) = if (getItem(position).type == "text") 0 else 1

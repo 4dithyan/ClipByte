@@ -23,34 +23,13 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setupTabs()
         setupClickListeners()
     }
 
-    // ── Tabs ─────────────────────────────────────────────────────
-    private fun setupTabs() {
-        binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab?) {
-                when (tab?.position) {
-                    0 -> showTab(isLogin = true)
-                    1 -> showTab(isLogin = false)
-                }
-            }
-            override fun onTabUnselected(tab: TabLayout.Tab?) {}
-            override fun onTabReselected(tab: TabLayout.Tab?) {}
-        })
-    }
-
-    private fun showTab(isLogin: Boolean) {
-        binding.layoutLogin.visibility    = if (isLogin) View.VISIBLE else View.GONE
-        binding.layoutRegister.visibility = if (isLogin) View.GONE   else View.VISIBLE
-        binding.tvAuthError.visibility    = View.GONE
-    }
 
     // ── Click listeners ──────────────────────────────────────────
     private fun setupClickListeners() {
-        binding.btnLogin.setOnClickListener    { doLogin() }
-        binding.btnRegister.setOnClickListener { doRegister() }
+        binding.btnLogin.setOnClickListener { doLogin() }
     }
 
     // ── Auth actions ─────────────────────────────────────────────
@@ -70,25 +49,6 @@ class LoginActivity : AppCompatActivity() {
             }
     }
 
-    private fun doRegister() {
-        val email = binding.etRegEmail.text.toString().trim()
-        val pass  = binding.etRegPassword.text.toString()
-        if (email.isEmpty() || pass.isEmpty()) {
-            showError("Please enter email and password.")
-            return
-        }
-        if (pass.length < 6) {
-            showError("Password must be at least 6 characters.")
-            return
-        }
-        setLoading(true)
-        auth.createUserWithEmailAndPassword(email, pass)
-            .addOnSuccessListener { goToMain() }
-            .addOnFailureListener { e ->
-                setLoading(false)
-                showError(e.message ?: "Registration failed.")
-            }
-    }
 
     // ── Helpers ──────────────────────────────────────────────────
     private fun goToMain() {
@@ -99,7 +59,6 @@ class LoginActivity : AppCompatActivity() {
     private fun setLoading(show: Boolean) {
         binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
         binding.btnLogin.isEnabled     = !show
-        binding.btnRegister.isEnabled  = !show
     }
 
     private fun showError(msg: String) {
