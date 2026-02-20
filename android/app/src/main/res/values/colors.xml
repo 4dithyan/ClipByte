@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand -->
+    <color name="accent">#6C63FF</color>
+    <color name="accent_dim">#336C63FF</color>
+    <color name="error">#FF5555</color>
+    <color name="success">#50FA7B</color>
+
+    <!-- Dark theme (default) -->
+    <color name="bg_primary">#0D0D1A</color>
+    <color name="bg_secondary">#12122A</color>
+    <color name="surface">#1E1E3A</color>
+    <color name="text_primary">#F0EFF8</color>
+    <color name="text_muted">#7F7EA8</color>
+
+    <!-- Material You seed -->
+    <color name="seed">#6C63FF</color>
+</resources>

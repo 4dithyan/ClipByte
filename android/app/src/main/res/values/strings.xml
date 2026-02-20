@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ClipByte</string>
+    <string name="auth_tagline">Your universal clipboard, synced instantly</string>
+    <string name="sign_in">Sign In</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="register">Register</string>
+    <string name="create_account">Create Account</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="enter_text">Paste or type text to sync…</string>
+    <string name="sync_text">⚡ Sync Text</string>
+    <string name="pick_image">🖼 Pick Image</string>
+    <string name="no_clips">No clips yet.\nPaste text or pick an image.</string>
+    <string name="copy">Copy</string>
+    <string name="copy_url">Copy URL</string>
+    <string name="delete">Delete</string>
+    <string name="image_clip">Clipboard image</string>
+    <string name="synced">Synced ✓</string>
+    <string name="notification_channel_name">ClipByte Monitor</string>
+    <string name="notification_text">Clipboard sync is active</string>
+</resources>

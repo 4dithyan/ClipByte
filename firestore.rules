@@ -1,0 +1,50 @@
+// Firestore security rules — paste into Firebase Console → Firestore → Rules
+// Or deploy with: firebase deploy --only firestore:rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── User documents ──────────────────────────────────────────
+    // Only the authenticated owner can read/write their own data.
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // ── Clipboard sub-collection ──────────────────────────────
+      match /clipboard/{clipId} {
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+
+        allow create: if request.auth != null
+          && request.auth.uid == userId
+          // Required fields must be present
+          && request.resource.data.keys().hasAll(['type','content','imageUrl','timestamp','expiresAt','device'])
+          // type must be "text" or "image"
+          && request.resource.data.type in ['text', 'image']
+          // content is a string (text clips) or empty (image clips)
+          && request.resource.data.content is string
+          && request.resource.data.content.size() <= 50000
+          // imageUrl is a string
+          && request.resource.data.imageUrl is string
+          && request.resource.data.imageUrl.size() <= 2048
+          // timestamp & expiresAt must be integers
+          && request.resource.data.timestamp is int
+          && request.resource.data.expiresAt is int
+          // expiresAt must be at most 1 hour from now (in ms)
+          && request.resource.data.expiresAt <= (request.time.toMillis() + 3600001)
+          // device label
+          && request.resource.data.device is string
+          && request.resource.data.device.size() <= 32;
+
+        // Updates: allow only timestamp/expiresAt refresh, no type change
+        allow update: if request.auth != null
+          && request.auth.uid == userId
+          && request.resource.data.type == resource.data.type;
+      }
+    }
+
+    // Default: deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

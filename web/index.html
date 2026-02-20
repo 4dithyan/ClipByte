@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClipByte — Cross-Device Clipboard Sync</title>
+  <meta name="description" content="ClipByte lets you sync text and images in real-time between your Android device and browser." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+  <!-- ───── HEADER ───── -->
+  <header class="site-header">
+    <div class="logo">
+      <span class="logo-icon">⚡</span>
+      <span class="logo-text">ClipByte</span>
+    </div>
+    <div class="header-actions">
+      <button id="theme-toggle" class="icon-btn" title="Toggle theme" aria-label="Toggle dark/light mode">☀️</button>
+      <button id="logout-btn" class="btn btn-ghost hidden" aria-label="Sign out">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- ───── AUTH SECTION ───── -->
+  <section id="auth-section" class="auth-wrapper" aria-label="Authentication">
+    <div class="auth-card glass-card">
+      <div class="auth-brand">
+        <span class="brand-icon">⚡</span>
+        <h1>ClipByte</h1>
+        <p>Your universal clipboard, synced instantly</p>
+      </div>
+
+      <!-- Error message -->
+      <div id="auth-error" class="auth-error hidden" role="alert"></div>
+
+      <!-- Tabs -->
+      <div class="auth-tabs" role="tablist">
+        <button id="tab-login"    class="tab active" role="tab" aria-selected="true">Sign In</button>
+        <button id="tab-register" class="tab"        role="tab" aria-selected="false">Register</button>
+      </div>
+
+      <!-- Login form -->
+      <form id="login-form" class="auth-form active" aria-label="Sign in form" novalidate>
+        <div class="field-group">
+          <label for="login-email">Email</label>
+          <input id="login-email"    type="email"    placeholder="you@example.com" autocomplete="email" required />
+        </div>
+        <div class="field-group">
+          <label for="login-password">Password</label>
+          <input id="login-password" type="password" placeholder="••••••••"        autocomplete="current-password" required />
+        </div>
+        <button id="login-btn" type="button" class="btn btn-primary w-full">Sign In</button>
+      </form>
+
+      <!-- Register form -->
+      <form id="register-form" class="auth-form" aria-label="Register form" novalidate>
+        <div class="field-group">
+          <label for="reg-email">Email</label>
+          <input id="reg-email"    type="email"    placeholder="you@example.com" autocomplete="email" required />
+        </div>
+        <div class="field-group">
+          <label for="reg-password">Password</label>
+          <input id="reg-password" type="password" placeholder="Min. 6 characters" autocomplete="new-password" required />
+        </div>
+        <button id="reg-btn" type="button" class="btn btn-primary w-full">Create Account</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ───── MAIN APP ───── -->
+  <main id="app-section" class="app-wrapper hidden" aria-label="Clipboard dashboard">
+
+    <!-- User info bar -->
+    <div class="user-bar">
+      <div class="user-info">
+        <span class="user-avatar">👤</span>
+        <span id="user-email" class="user-email">user@example.com</span>
+      </div>
+      <div class="sync-status">
+        <span class="status-dot"></span>
+        <span>Live sync active</span>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+
+      <!-- ── Left column: inputs ── -->
+      <div class="input-panel">
+
+        <!-- Text Input Card -->
+        <div class="card glass-card" aria-label="Text clipboard input">
+          <div class="card-header">
+            <h2 class="card-title">📝 Text</h2>
+            <span class="card-hint">Ctrl+Enter to sync</span>
+          </div>
+          <textarea
+            id="text-input"
+            placeholder="Paste or type text to sync across devices…"
+            rows="5"
+            maxlength="50000"
+            aria-label="Text to sync"
+          ></textarea>
+          <button id="sync-text-btn" class="btn btn-primary w-full">⚡ Sync Text</button>
+        </div>
+
+        <!-- Image Upload Card -->
+        <div class="card glass-card" aria-label="Image upload">
+          <div class="card-header">
+            <h2 class="card-title">🖼 Image</h2>
+            <span class="card-hint">Max 5 MB · JPG, PNG, WEBP</span>
+          </div>
+
+          <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Drop image or click to select">
+            <div class="drop-icon">📁</div>
+            <p class="drop-text">Drag & drop an image here</p>
+            <p class="drop-subtext">or <span class="link">click to browse</span> or paste from clipboard</p>
+          </div>
+
+          <!-- Hidden file input -->
+          <input id="file-input" type="file" accept="image/jpeg,image/png,image/webp" hidden aria-label="Select image file" />
+
+          <!-- Upload progress -->
+          <div id="upload-progress" class="progress-wrapper hidden" aria-live="polite">
+            <div class="progress-track">
+              <div id="progress-bar" class="progress-bar"></div>
+            </div>
+            <span class="progress-label">Uploading…</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Right column: history ── -->
+      <div class="history-panel">
+        <div class="card glass-card history-card">
+          <div class="card-header">
+            <h2 class="card-title">📋 History</h2>
+            <span class="card-hint" aria-live="polite">Last 10 items · 1h TTL</span>
+          </div>
+
+          <div id="empty-state" class="empty-state" aria-label="No clipboard items">
+            <div class="empty-icon">🗂</div>
+            <p>Nothing synced yet.</p>
+            <p class="empty-subtext">Paste text or drop an image to get started.</p>
+          </div>
+
+          <ul id="history-list" class="history-list" aria-label="Clipboard history" role="list"></ul>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ───── TOAST ───── -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- ───── SCRIPTS ───── -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>

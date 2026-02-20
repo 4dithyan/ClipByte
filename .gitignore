@@ -1,0 +1,35 @@
+# ============================================================
+#  ClipByte — .gitignore
+# ============================================================
+
+# ── Secrets & credentials (NEVER commit these) ──────────────
+android/app/google-services.json
+web/firebase-config.js
+
+# ── Android build outputs ────────────────────────────────────
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.keystore
+*.jks
+
+# ── Kotlin / Java ────────────────────────────────────────────
+*.class
+*.dex
+
+# ── Android Studio ───────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+.DS_Store
+Thumbs.db
+
+# ── Node / Firebase tools ────────────────────────────────────
+node_modules/
+.firebase/
+.firebaserc
+
+# ── OS files ─────────────────────────────────────────────────
+.DS_Store
+desktop.ini
